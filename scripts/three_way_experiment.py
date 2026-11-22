@@ -83,11 +83,35 @@ def frame(test, proba, tag, fold):
         "p_calm": proba[:, 0], "p_stress": proba[:, 1], "p_exertion": proba[:, 2]})
 
 
+def variant_mask(pool, variant, trim_sec=30.0):
+    """Boolean keep-mask over the pooled windows.
+    full        every window
+    no_e4       drop all E4 Stress windows (they are still used as a zero-shot test set in lodo)
+    e4_trimmed  drop E4 Stress task windows that start in the first ``trim_sec`` of their task: the alignment
+                check found tasks begin ~15-30 s later than the nominal schedule, so those windows still
+                contain rest."""
+    keep = np.ones(len(pool), dtype=bool)
+    if variant == "no_e4":
+        keep = np.array([dataset_family(w) != "e4stress" for w in pool])
+    elif variant == "e4_trimmed":
+        starts = {}
+        for w in pool:
+            if w["dataset"] == "e4stress":
+                k = (w["subject"], w["stage"])
+                starts[k] = min(starts.get(k, 1e12), w["t_start_sec"])
+        for i, w in enumerate(pool):
+            if w["dataset"] == "e4stress" and w["model_label"] == 1:
+                keep[i] = (w["t_start_sec"] - starts[(w["subject"], w["stage"])]) >= trim_sec
+    return keep
+
+
 def run(args):
     pool = load_pool()
     y = np.array([w["model_label"] for w in pool])
     subj = np.array([w["dataset"].split("_")[0] + ":" + w["subject"] for w in pool])
-    print("pool:", len(pool), "windows |", {CLASS_NAMES_3[k]: int((y == k).sum()) for k in range(3)})
+    keep = variant_mask(pool, args.variant)
+    print("variant:", args.variant, "| pool:", len(pool), "windows |",
+          {CLASS_NAMES_3[k]: int((y == k).sum()) for k in range(3)}, "| kept:", int(keep.sum()), flush=True)
     device = get_device()
     folds = list(StratifiedGroupKFold(n_splits=args.folds, shuffle=True, random_state=0).split(pool, y, subj))
     out = Path(args.out)
@@ -100,16 +124,18 @@ def run(args):
             if f.exists():
                 continue
             print(f"=== {cfg} cv fold {k + 1}/{len(folds)} | elapsed {(time.time() - t0) / 60:.1f} min", flush=True)
-            test = [pool[i] for i in te]
-            p = fit_predict([pool[i] for i in tr], test, mods, args, device, seed=k)
+            test = [pool[i] for i in te if keep[i]]
+            p = fit_predict([pool[i] for i in tr if keep[i]], test, mods, args, device, seed=k)
             frame(test, p, "cv", k).to_csv(f, index=False)
-        for held in ("wesad", "e4stress"):
+        # without E4 in the pool, leaving out WESAD would leave EXERCISE as the only training data: skip it
+        for held in (("e4stress",) if args.variant == "no_e4" else ("wesad", "e4stress")):
             f = out / f"{cfg}_lodo_{held}.csv"
             if f.exists():
                 continue
             print(f"=== {cfg} leave-out {held} | elapsed {(time.time() - t0) / 60:.1f} min", flush=True)
-            train = [w for w in pool if dataset_family(w) != held]
-            test = [w for w in pool if dataset_family(w) == held]
+            train = [w for w, k_ in zip(pool, keep) if k_ and dataset_family(w) != held]
+            # no_e4: the held-out E4 Stress set is the full original one (zero-shot test)
+            test = [w for w, k_ in zip(pool, keep) if dataset_family(w) == held and (k_ or args.variant == "no_e4")]
             p = fit_predict(train, test, mods, args, device, seed=100)
             frame(test, p, f"lodo_{held}", -1).to_csv(f, index=False)
     print("training finished", flush=True)
@@ -161,9 +187,12 @@ if __name__ == "__main__":
     ap.add_argument("--folds", type=int, default=5)
     ap.add_argument("--epochs", type=int, default=15)
     ap.add_argument("--train-stride", type=int, default=2)
-    ap.add_argument("--out", default=str(ROOT / "results/three_way"))
+    ap.add_argument("--variant", choices=["full", "no_e4", "e4_trimmed"], default="full")
+    ap.add_argument("--out", default=None, help="default: results/three_way (full) or results/three_way_<variant>")
     ap.add_argument("--summarize", action="store_true", help="only print the summary of finished runs")
     a = ap.parse_args()
+    if a.out is None:
+        a.out = str(ROOT / ("results/three_way" if a.variant == "full" else f"results/three_way_{a.variant}"))
     if not a.summarize:
         run(a)
     summarize(a)

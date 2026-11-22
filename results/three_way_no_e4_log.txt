@@ -1,0 +1,55 @@
+Loading cached dataset from C:\Users\User\Desktop\licenta\cache\wesad_wrist.pkl ...
+Loaded 2737 windows.
+variant: no_e4 | pool: 13306 windows | {'calm': 5227, 'stress': 3387, 'exertion': 4692} | kept: 10243
+Using device: cpu (CPU (no GPU visible))
+=== bvp_eda_acc cv fold 1/5 | elapsed 0.0 min
+=== bvp_eda_acc cv fold 2/5 | elapsed 0.9 min
+=== bvp_eda_acc cv fold 3/5 | elapsed 1.8 min
+=== bvp_eda_acc cv fold 4/5 | elapsed 2.7 min
+=== bvp_eda_acc cv fold 5/5 | elapsed 3.6 min
+=== bvp_eda_acc leave-out e4stress | elapsed 4.5 min
+=== bvp_eda cv fold 1/5 | elapsed 5.6 min
+=== bvp_eda cv fold 2/5 | elapsed 6.2 min
+=== bvp_eda cv fold 3/5 | elapsed 6.8 min
+=== bvp_eda cv fold 4/5 | elapsed 7.4 min
+=== bvp_eda cv fold 5/5 | elapsed 8.0 min
+=== bvp_eda leave-out e4stress | elapsed 8.7 min
+training finished
+
+################ bvp_eda_acc: subject-grouped CV (5 folds) ################
+C:\Users\User\Desktop\licenta\.venv\Lib\site-packages\sklearn\metrics\_classification.py:2939: UserWarning: y_pred contains classes not in y_true
+  warnings.warn("y_pred contains classes not in y_true")
+                n  macro_f1_3way  bal_acc  recall_calm  recall_stress  recall_exertion
+ALL       10243.0          0.659    0.731        0.683          0.790             0.72
+exercise   7510.0          0.612    0.705        0.704          0.690             0.72
+wesad      2733.0          0.452    0.758        0.659          0.857              NaN
+confusion (rows=true, cols=pred; calm/stress/exertion):
+ [[3096 1398   37]
+ [ 116  806   98]
+ [ 117 1196 3379]]
+binary stress-vs-rest: macro-F1 0.595 | exercise windows called stress: 0.255
+per-subject 3-way accuracy by dataset:
+           count  mean   std   min   25%   50%   75%   max
+family                                                   
+exercise   33.0  0.72  0.21  0.12  0.59  0.77  0.89  0.97
+wesad      15.0  0.70  0.18  0.36  0.60  0.74  0.78  0.99
+[leave-out e4stress] binary stress macro-F1 0.493 bal_acc 0.499 | stress recall 0.676 | false-alarm rate 0.678 | predicted exertion 0.209
+
+################ bvp_eda: subject-grouped CV (5 folds) ################
+C:\Users\User\Desktop\licenta\.venv\Lib\site-packages\sklearn\metrics\_classification.py:2939: UserWarning: y_pred contains classes not in y_true
+  warnings.warn("y_pred contains classes not in y_true")
+                n  macro_f1_3way  bal_acc  recall_calm  recall_stress  recall_exertion
+ALL       10243.0          0.641    0.686        0.687          0.622            0.748
+exercise   7510.0          0.603    0.668        0.694          0.561            0.748
+wesad      2733.0          0.426    0.671        0.680          0.662              NaN
+confusion (rows=true, cols=pred; calm/stress/exertion):
+ [[3115 1244  172]
+ [ 178  634  208]
+ [  87 1096 3509]]
+binary stress-vs-rest: macro-F1 0.576 | exercise windows called stress: 0.234
+per-subject 3-way accuracy by dataset:
+           count  mean   std   min   25%   50%   75%   max
+family                                                   
+exercise   33.0  0.71  0.21  0.07  0.59  0.79  0.88  0.98
+wesad      15.0  0.68  0.24  0.18  0.55  0.75  0.85  0.94
+[leave-out e4stress] binary stress macro-F1 0.593 bal_acc 0.590 | stress recall 0.837 | false-alarm rate 0.657 | predicted exertion 0.098
