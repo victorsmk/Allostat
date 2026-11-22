@@ -1,0 +1,98 @@
+Loading cached dataset from C:\Users\User\Desktop\licenta\cache\wesad_wrist.pkl ...
+Loaded 2737 windows.
+pool: 13306 windows | {'calm': 5227, 'stress': 3387, 'exertion': 4692}
+Using device: cpu (CPU (no GPU visible))
+=== all cv fold 1/5 | elapsed 0.0 min
+=== all cv fold 2/5 | elapsed 1.5 min
+=== all cv fold 3/5 | elapsed 3.0 min
+=== all cv fold 4/5 | elapsed 4.6 min
+=== all cv fold 5/5 | elapsed 6.2 min
+=== all leave-out wesad | elapsed 7.8 min
+=== all leave-out e4stress | elapsed 9.4 min
+=== bvp_eda_acc cv fold 1/5 | elapsed 11.1 min
+=== bvp_eda_acc cv fold 2/5 | elapsed 12.6 min
+=== bvp_eda_acc cv fold 3/5 | elapsed 14.1 min
+=== bvp_eda_acc cv fold 4/5 | elapsed 15.6 min
+=== bvp_eda_acc cv fold 5/5 | elapsed 17.1 min
+=== bvp_eda_acc leave-out wesad | elapsed 18.5 min
+=== bvp_eda_acc leave-out e4stress | elapsed 19.8 min
+=== bvp_eda cv fold 1/5 | elapsed 21.1 min
+=== bvp_eda cv fold 2/5 | elapsed 22.0 min
+=== bvp_eda cv fold 3/5 | elapsed 22.9 min
+=== bvp_eda cv fold 4/5 | elapsed 23.9 min
+=== bvp_eda cv fold 5/5 | elapsed 24.7 min
+=== bvp_eda leave-out wesad | elapsed 25.6 min
+=== bvp_eda leave-out e4stress | elapsed 26.5 min
+training finished
+
+################ all: subject-grouped CV (5 folds) ################
+C:\Users\User\Desktop\licenta\.venv\Lib\site-packages\sklearn\metrics\_classification.py:2939: UserWarning: y_pred contains classes not in y_true
+  warnings.warn("y_pred contains classes not in y_true")
+C:\Users\User\Desktop\licenta\.venv\Lib\site-packages\sklearn\metrics\_classification.py:2939: UserWarning: y_pred contains classes not in y_true
+  warnings.warn("y_pred contains classes not in y_true")
+                n  macro_f1_3way  bal_acc  recall_calm  recall_stress  recall_exertion
+ALL       13306.0          0.705    0.715        0.739          0.822            0.585
+e4stress   3063.0          0.478    0.699        0.513          0.885              NaN
+exercise   7510.0          0.556    0.598        0.788          0.422            0.585
+wesad      2733.0          0.493    0.803        0.759          0.848              NaN
+confusion (rows=true, cols=pred; calm/stress/exertion):
+ [[3865 1274   88]
+ [ 497 2784  106]
+ [ 126 1823 2743]]
+binary stress-vs-rest: macro-F1 0.694 | exercise windows called stress: 0.389
+per-subject 3-way accuracy by dataset:
+           count  mean   std   min   25%   50%   75%   max
+family                                                   
+e4stress   29.0  0.81  0.11  0.52  0.77  0.81  0.89  0.97
+exercise   33.0  0.65  0.22  0.12  0.51  0.62  0.86  0.96
+wesad      15.0  0.78  0.21  0.29  0.64  0.86  0.94  1.00
+[leave-out wesad] binary stress macro-F1 0.598 bal_acc 0.696 | stress recall 0.825 | false-alarm rate 0.432 | predicted exertion 0.028
+[leave-out e4stress] binary stress macro-F1 0.643 bal_acc 0.633 | stress recall 0.883 | false-alarm rate 0.616 | predicted exertion 0.023
+
+################ bvp_eda_acc: subject-grouped CV (5 folds) ################
+C:\Users\User\Desktop\licenta\.venv\Lib\site-packages\sklearn\metrics\_classification.py:2939: UserWarning: y_pred contains classes not in y_true
+  warnings.warn("y_pred contains classes not in y_true")
+C:\Users\User\Desktop\licenta\.venv\Lib\site-packages\sklearn\metrics\_classification.py:2939: UserWarning: y_pred contains classes not in y_true
+  warnings.warn("y_pred contains classes not in y_true")
+                n  macro_f1_3way  bal_acc  recall_calm  recall_stress  recall_exertion
+ALL       13306.0          0.753    0.757        0.801          0.757            0.714
+e4stress   3063.0          0.468    0.684        0.527          0.841              NaN
+exercise   7510.0          0.587    0.613        0.832          0.295            0.714
+wesad      2733.0          0.525    0.801        0.857          0.744              NaN
+confusion (rows=true, cols=pred; calm/stress/exertion):
+ [[4189  933  105]
+ [ 579 2565  243]
+ [ 244 1100 3348]]
+binary stress-vs-rest: macro-F1 0.745 | exercise windows called stress: 0.234
+per-subject 3-way accuracy by dataset:
+           count  mean   std   min   25%   50%   75%   max
+family                                                   
+e4stress   29.0  0.78  0.09  0.48  0.73  0.79  0.85  0.89
+exercise   33.0  0.73  0.16  0.28  0.63  0.75  0.86  0.92
+wesad      15.0  0.83  0.13  0.53  0.76  0.85  0.92  0.98
+[leave-out wesad] binary stress macro-F1 0.608 bal_acc 0.663 | stress recall 0.672 | false-alarm rate 0.346 | predicted exertion 0.057
+[leave-out e4stress] binary stress macro-F1 0.493 bal_acc 0.499 | stress recall 0.676 | false-alarm rate 0.678 | predicted exertion 0.209
+
+################ bvp_eda: subject-grouped CV (5 folds) ################
+C:\Users\User\Desktop\licenta\.venv\Lib\site-packages\sklearn\metrics\_classification.py:2939: UserWarning: y_pred contains classes not in y_true
+  warnings.warn("y_pred contains classes not in y_true")
+C:\Users\User\Desktop\licenta\.venv\Lib\site-packages\sklearn\metrics\_classification.py:2939: UserWarning: y_pred contains classes not in y_true
+  warnings.warn("y_pred contains classes not in y_true")
+                n  macro_f1_3way  bal_acc  recall_calm  recall_stress  recall_exertion
+ALL       13306.0          0.746     0.75        0.744          0.727            0.779
+e4stress   3063.0          0.458     0.67        0.500          0.840              NaN
+exercise   7510.0          0.602     0.62        0.816          0.263            0.779
+wesad      2733.0          0.441     0.67        0.742          0.598              NaN
+confusion (rows=true, cols=pred; calm/stress/exertion):
+ [[3890 1165  172]
+ [ 590 2461  336]
+ [ 167  868 3657]]
+binary stress-vs-rest: macro-F1 0.733 | exercise windows called stress: 0.185
+per-subject 3-way accuracy by dataset:
+           count  mean   std   min   25%   50%   75%   max
+family                                                   
+e4stress   29.0  0.77  0.11  0.43  0.71  0.77  0.87  0.92
+exercise   33.0  0.75  0.19  0.02  0.66  0.82  0.89  0.94
+wesad      15.0  0.71  0.24  0.24  0.56  0.82  0.87  1.00
+[leave-out wesad] binary stress macro-F1 0.656 bal_acc 0.676 | stress recall 0.566 | false-alarm rate 0.214 | predicted exertion 0.057
+[leave-out e4stress] binary stress macro-F1 0.593 bal_acc 0.590 | stress recall 0.837 | false-alarm rate 0.657 | predicted exertion 0.098
