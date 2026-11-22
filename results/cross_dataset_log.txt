@@ -1,0 +1,38 @@
+Loading cached dataset from C:\Users\User\Desktop\licenta\cache\wesad_wrist.pkl ...
+Loaded 2737 windows.
+{'e4stress': 3063, 'exercise_stress': 2818, 'exercise_aerobic': 2854, 'exercise_anaerobic': 1838} | WESAD train windows: 2733
+Using device: cpu (CPU (no GPU visible))
+=== train on WESAD: all, seed 0
+=== train on WESAD: all, seed 1
+=== train on WESAD: all, seed 2
+=== train on WESAD: bvp_eda, seed 0
+=== train on WESAD: bvp_eda, seed 1
+=== train on WESAD: bvp_eda, seed 2
+
+=== mean over seeds ===
+                                 n  n_stress  ...    fpr  mean_p_stress
+group              config                     ...                      
+e4stress           all      3063.0    2367.0  ...  0.262            NaN
+                   bvp_eda  3063.0    2367.0  ...  0.449            NaN
+exercise_aerobic   all      2854.0       NaN  ...  0.588          0.586
+                   bvp_eda  2854.0       NaN  ...  0.799          0.798
+exercise_anaerobic all      1838.0       NaN  ...  0.664          0.663
+                   bvp_eda  1838.0       NaN  ...  0.861          0.857
+exercise_stress    all      2818.0     410.0  ...  0.173            NaN
+                   bvp_eda  2818.0     410.0  ...  0.143            NaN
+
+[8 rows x 8 columns]
+
+=== std over seeds ===
+                            n_stress  macro_f1  ...    fpr  mean_p_stress
+group              config                       ...                      
+e4stress           all           0.0     0.066  ...  0.092            NaN
+                   bvp_eda       0.0     0.035  ...  0.080            NaN
+exercise_aerobic   all           NaN       NaN  ...  0.075          0.075
+                   bvp_eda       NaN       NaN  ...  0.026          0.025
+exercise_anaerobic all           NaN       NaN  ...  0.040          0.041
+                   bvp_eda       NaN       NaN  ...  0.013          0.014
+exercise_stress    all           0.0     0.028  ...  0.027            NaN
+                   bvp_eda       0.0     0.012  ...  0.055            NaN
+
+[8 rows x 7 columns]
