@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "stressnet"
+version = "0.1.0"
+description = "Wearable stress detection: data pipeline, multimodal models, evaluation (bachelor thesis)"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy",
+    "scipy",
+    "pandas",
+    "scikit-learn",
+    "matplotlib",
+]
+
+[project.optional-dependencies]
+# torch is installed separately (CPU vs CUDA build); Colab already ships it.
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

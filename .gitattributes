@@ -1,0 +1,14 @@
+# Let Git normalise line endings; keep source and notebooks as LF so they behave the same on Windows and Colab.
+* text=auto
+*.py text eol=lf
+*.ipynb text eol=lf
+*.toml text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+
+# Binary files: never touch
+*.pkl binary
+*.pt binary
+*.png binary
+*.zip binary
+*.pdf binary
