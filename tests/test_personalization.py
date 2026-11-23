@@ -61,3 +61,36 @@ def test_fit_head_adapts_but_stays_close_to_global():
     drift = sum(((a - b) ** 2).sum() for a, b in zip(adapted.parameters(), head.parameters()))
     assert float(drift.detach()) < 50.0
     assert all(p.requires_grad for p in head.parameters())   # the original head is untouched
+
+
+def test_mask_absent_protects_unseen_class():
+    rng = np.random.default_rng(0)
+    y = np.repeat([0, 1], 30)
+    logits = torch.tensor(rng.normal(size=(60, 3)), dtype=torch.float32)
+    logits[np.arange(60), y] += 2.0
+    plain = P.fit_bias(logits, y)
+    masked = P.fit_bias(logits, y, mask_absent=True)
+    assert plain[2] < -0.05                      # unmasked: the never-seen class 2 is pushed down
+    assert masked[2] == 0.0                      # masked: left alone
+
+
+def test_head_replay_and_mask_keep_unseen_class():
+    torch.manual_seed(0)
+    head = nn.Sequential(nn.Linear(8, 16), nn.ReLU(), nn.Linear(16, 3))
+    centers = torch.randn(3, 8) * 3
+    make = lambda c, n: centers[c] + 0.3 * torch.randn(n, 8)
+    emb = torch.cat([make(0, 10), make(1, 10)])
+    y = np.repeat([0, 1], 10)
+    test2 = make(2, 50)
+
+    def frac2(h):
+        with torch.no_grad():
+            return float((h(test2).argmax(1) == 2).float().mean())
+
+    base = P.fit_head(head, emb, y, steps=100, lr=1e-2, l2sp=1e-3)
+    masked = P.fit_head(head, emb, y, steps=100, lr=1e-2, l2sp=1e-3, mask_absent=True)
+    replay = P.fit_head(head, emb, y, steps=100, lr=1e-2, l2sp=1e-3,
+                        extra_emb=make(2, 10), extra_y=np.full(10, 2))
+    assert frac2(base) <= frac2(head) + 1e-9     # plain fine-tuning never helps the unseen class
+    assert frac2(replay) >= frac2(base)          # replaying examples of it does not hurt, usually helps
+    assert frac2(masked) >= frac2(base) - 1e-9

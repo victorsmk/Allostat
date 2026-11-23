@@ -6,6 +6,9 @@ user takes milliseconds and the personal state is tiny (what a federated client 
 * ``fit_bias``  - one additive offset per class on the logits (a personal decision threshold)
 * ``fit_head``  - fine-tune the classifier head, with an L2 penalty towards the global weights (L2-SP)
 
+Both can protect classes the user never labelled (``mask_absent``) and ``fit_head`` can mix in replay /
+pseudo-labelled examples (``extra_emb``), see scripts/cross_session_fix.py.
+
 Calibration windows are sampled so that neither they nor anything overlapping them can be in the test set.
 """
 
@@ -63,39 +66,74 @@ def sample_calibration(windows, k_per_class, rng, min_gap_sec=60.0):
     return chosen, ids[~blocked]
 
 
-def _balanced_weights(y, num_classes):
-    counts = np.bincount(y, minlength=num_classes).astype(float)
-    w = np.where(counts > 0, counts.sum() / (num_classes * np.maximum(counts, 1)), 0.0)
+def _balanced_weights(y, num_classes, sample_weight=None):
+    """Class weights total / (C * count_c) computed from (optionally sample-weighted) counts; 0 for absent classes."""
+    y = np.asarray(y)
+    sw = np.ones(len(y)) if sample_weight is None else np.asarray(sample_weight, dtype=float)
+    counts = np.bincount(y, weights=sw, minlength=num_classes).astype(float)
+    w = np.where(counts > 0, counts.sum() / (num_classes * np.maximum(counts, 1e-12)), 0.0)
     return torch.tensor(w, dtype=torch.float32)
 
 
-def fit_bias(logits, y, num_classes=3, steps=100, lr=0.05, l2=0.01):
-    """Per-class logit offset minimising class-balanced CE on the calibration set (+ small L2 to stay near 0)."""
+def _present(y, num_classes):
+    return torch.tensor(np.bincount(np.asarray(y), minlength=num_classes) > 0)
+
+
+def _weighted_ce(z, y_t, y, num_classes, sample_weight=None):
+    """Class-balanced (and optionally per-sample weighted) cross-entropy, normalised by the total weight."""
+    cw = _balanced_weights(y, num_classes, sample_weight)[y_t]
+    sw = torch.ones(len(y)) if sample_weight is None else torch.as_tensor(sample_weight, dtype=torch.float32)
+    w = cw * sw
+    return (F.cross_entropy(z, y_t, reduction="none") * w).sum() / w.sum()
+
+
+def fit_bias(logits, y, num_classes=3, steps=100, lr=0.05, l2=0.01, mask_absent=False):
+    """Per-class logit offset minimising class-balanced CE on the calibration set (+ small L2 to stay near 0).
+    ``mask_absent``: classes missing from the calibration labels are left out of the softmax and keep offset 0,
+    so the adapter cannot push them down just because it never saw them."""
     logits = torch.as_tensor(logits, dtype=torch.float32)
     y_t = torch.as_tensor(y, dtype=torch.long)
+    present = _present(y, num_classes)
     b = torch.zeros(num_classes, requires_grad=True)
     opt = torch.optim.Adam([b], lr=lr)
-    w = _balanced_weights(np.asarray(y), num_classes)
     for _ in range(steps):
         opt.zero_grad()
-        loss = F.cross_entropy(logits + b, y_t, weight=w) + l2 * (b ** 2).sum()
+        z = logits + b
+        if mask_absent:
+            z = z.masked_fill(~present, -1e9)
+        loss = _weighted_ce(z, y_t, y, num_classes) + l2 * (b ** 2).sum()
         loss.backward()
         opt.step()
-    return b.detach()
+    out = b.detach()
+    return out * present if mask_absent else out
 
 
-def fit_head(head, emb, y, num_classes=3, steps=60, lr=3e-3, l2sp=1e-2):
+def fit_head(head, emb, y, num_classes=3, steps=60, lr=3e-3, l2sp=1e-2, mask_absent=False,
+             extra_emb=None, extra_y=None, extra_weight=0.3):
     """Fine-tune a copy of ``head`` on calibration embeddings with class-balanced CE and an L2-SP penalty that
-    keeps the weights close to the global ones. Returns the adapted head (eval mode)."""
+    keeps the weights close to the global ones. Returns the adapted head (eval mode).
+
+    mask_absent  - classes absent from ``y`` are excluded from the softmax in the loss
+    extra_emb/y  - additional (replay or pseudo-labelled) examples, each weighted by ``extra_weight``
+                   relative to a calibration example; they count towards the class balance."""
     adapted = copy.deepcopy(head).eval()          # eval: no dropout on a handful of examples
     ref = [p.detach().clone() for p in adapted.parameters()]
-    y_t = torch.as_tensor(y, dtype=torch.long)
     emb = torch.as_tensor(emb, dtype=torch.float32)
-    w = _balanced_weights(np.asarray(y), num_classes)
+    y_all = np.asarray(y)
+    sample_w = None
+    present = _present(y, num_classes)
+    if extra_emb is not None and len(extra_emb):
+        emb = torch.cat([emb, torch.as_tensor(extra_emb, dtype=torch.float32)])
+        sample_w = np.concatenate([np.ones(len(y_all)), np.full(len(extra_y), extra_weight)])
+        y_all = np.concatenate([y_all, np.asarray(extra_y)])
+    y_t = torch.as_tensor(y_all, dtype=torch.long)
     opt = torch.optim.Adam(adapted.parameters(), lr=lr)
     for _ in range(steps):
         opt.zero_grad()
-        loss = F.cross_entropy(adapted(emb), y_t, weight=w)
+        z = adapted(emb)
+        if mask_absent and extra_emb is None:
+            z = z.masked_fill(~present, -1e9)
+        loss = _weighted_ce(z, y_t, y_all, num_classes, sample_w)
         loss = loss + l2sp * sum(((p - r) ** 2).sum() for p, r in zip(adapted.parameters(), ref))
         loss.backward()
         opt.step()
